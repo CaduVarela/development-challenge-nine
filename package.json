@@ -1,0 +1,10 @@
+{
+  "name": "development-challenge-nine",
+  "version": "1.0.0",
+  "repository": "https://github.com/CaduVarela/development-challenge-nine.git",
+  "author": "Carlos Varela <caduvarela@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "create-next-app": "^14.0.3"
+  }
+}
