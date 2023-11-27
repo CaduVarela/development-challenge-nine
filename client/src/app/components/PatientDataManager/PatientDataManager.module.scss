@@ -1,0 +1,154 @@
+@import "./../../styles/utils.module.scss";
+
+$panel-min-height: 68vh;
+
+.panel-wrapper {
+
+  position: absolute;
+
+  // Align Center
+  top: calc(50vh - ($panel-min-height / 1.9) * 1.2);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+
+  background-color: $background-color;
+  box-shadow: 0px 5px 17px rgba($theme-color, .35);
+
+  border-radius: 24px;
+
+  width: 50%;
+  min-width: 420px;
+
+  min-height: $panel-min-height;
+
+  padding: 32px;
+
+  z-index: 2;
+
+  header {
+
+    height: 6.75vh;
+    min-height: 48px;
+
+    padding: 0;
+    margin: 0 auto 16px;
+
+    //background-color: rgba( #ff0000, .2);
+
+    color: $theme-color;
+    font-weight: bold;
+
+    border-bottom: 1px solid $light-gray;
+
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-template-columns: 1fr 32px;
+    grid-template-rows: 1fr;
+    gap: 0px 16px;
+    grid-template-areas:
+      "title close";
+
+    .title {
+      grid-area: title;
+
+      overflow-x: scroll;
+      overflow-y: hidden;
+      white-space: nowrap;
+
+      > div {
+        margin: 0;
+      }
+    }
+
+    .close {
+      grid-area: close;
+
+      color: $contrast;
+
+      transition: color .2s;
+      :hover {
+        color: $theme-color;
+      }
+    }
+
+    h1 {
+      font-size: clamp(14pt, 4vh, 24pt);
+    }
+
+    
+  }
+
+  .form {
+
+    &.personal {
+
+      display: grid;
+      grid-auto-columns: 1fr;
+      grid-template-columns: 1fr 0.5fr 0.2fr 0.2fr 0.2fr 0.5fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+      gap: 0px 0px;
+      grid-template-areas:
+        "name name name name name name name"
+        "birthdate birthdate . email email email email"
+        ". . . . . . .";
+
+
+      .name { grid-area: name; }
+
+      .birthdate { grid-area: birthdate; }
+
+      .email { grid-area: email; }
+    }
+
+    &.address {
+
+      display: grid;
+      grid-auto-columns: 1fr;
+      grid-template-columns: 1fr 0.5fr 0.2fr 0.2fr 0.2fr 0.5fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+      gap: 0px 0px;
+      grid-template-areas:
+        "postal postal . city city city city"
+        "country country country . state state state"
+        "street street street street street street street";
+
+      .postal-code { grid-area: postal; }
+
+      .city { grid-area: city; }
+
+      .country { grid-area: country; }
+
+      .state { grid-area: state; }
+
+      .street-address { grid-area: street; }
+    }
+
+    margin-bottom: 16px;
+
+    width: 100%;
+
+    .form-group {
+
+      color: $contrast;
+      font-size: 14pt;
+
+      margin-bottom: 32px;
+
+      label {
+        display: block;
+
+        font-weight: 500;
+        font-weight: bold;
+
+        margin-bottom: 5px;
+      }
+
+    }
+
+  }
+
+  .form-button-row {
+    text-align: center;
+  }
+}

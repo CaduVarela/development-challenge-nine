@@ -1,0 +1,32 @@
+// Palette
+$theme-color: #68a6e0;
+$theme-color-contrast: #e0a268; // complementary of theme color
+$theme-color-contrast-light: #fdf1e9;
+
+$warning: #e06886;
+
+$background-color: #fcfcfc;
+$contrast: #191919;
+
+$lightest-gray: #f5f5f5;
+$light-gray: #efefef;
+$gray: #c0c0c0;
+$dark-gray: #989898;
+$darkest-gray: #808080;
+
+:export {
+    themeColor: $theme-color;
+    themeColorContrast: $theme-color-contrast;
+    themeColorContrastLight: $theme-color-contrast-light;
+
+    warning: $warning;
+
+    backgroundColor: $background-color;
+    contrast: $contrast;
+    
+    lightestGray: $lightest-gray;
+    lightGray: $light-gray;
+    gray: $gray;
+    darkGray: $dark-gray;
+    darkestGray: $darkest-gray;
+}
