@@ -32,7 +32,7 @@ Patient.init(
             }
         },
         birthdate: {
-            type: DataTypes.DATE,
+            type: DataTypes.DATEONLY,
             allowNull: false,
             validate: {
                 notEmpty: true,
@@ -102,7 +102,7 @@ export type PatientType = {
 export function isPatientType(data: PatientType | any): data is PatientType {
     return (
         typeof (data as PatientType).name === 'string' &&
-        typeof (data as PatientType).birthdate === 'string' &&
+        typeof (data as PatientType).birthdate === typeof Date &&
         typeof (data as PatientType).email === 'string' &&
         typeof (data as PatientType).country === 'string' &&
         typeof (data as PatientType).state === 'string' &&
