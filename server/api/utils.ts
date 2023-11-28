@@ -25,3 +25,7 @@ export function generateErrorJSON(error: string | CustomError | any) {
         }
     }
 }
+
+export function isCustomError(data: CustomError | any): data is CustomError {
+    return (data as CustomError).rawError !== undefined;
+}
