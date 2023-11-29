@@ -8,7 +8,6 @@ import KloudsBackground from "./components/Klouds/KloudsBackground"
 import PatientDataManager from "./components/PatientDataManager/PatientDataManager"
 import PatientManager from "./components/PatientManager/PatientManager"
 
-
 export default function Home() {
 
   return (
@@ -16,9 +15,6 @@ export default function Home() {
       <ThemeProvider theme={MainTheme}>
         <KloudsBackground/>
         <PatientManager/>
-        {/*
-        <PatientDataManager />
-        */}
       </ThemeProvider>
     </ReactQueryWrapper>
   )

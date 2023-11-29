@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PatientType, isPatientType } from "@/models/PatientModel";
+import { PatientType, isPatientType } from "./../models/PatientModel";
 import * as patientService from './../services/PatientService';
 import * as utils from '../utils';
 
@@ -77,12 +77,20 @@ export async function getPatientById(req : Request, res : Response) {
 
 export async function updatePatient(req : Request, res : Response) {
     
+    /*
+    if ( Object.entries(req.body).length === 0 || !isPatientType(req.body) ) {
+        invalidRequest(res)
+        return
+    }
+    */
+
     if ( Object.entries(req.body).length === 0 || !isPatientType(req.body) ) {
         invalidRequest(res)
         return
     }
 
     const patientJSON : PatientType = {
+        id: req.body.id,
         name: req.body.name,
         birthdate: req.body.birthdate,
         email: req.body.email,
@@ -93,6 +101,8 @@ export async function updatePatient(req : Request, res : Response) {
         street: req.body.street,
         addressNumber: req.body.addressNumber,
     }
+
+    console.log(patientJSON)
 
     const data = await patientService.updatePatient(parseInt(req.params.id), patientJSON)
 

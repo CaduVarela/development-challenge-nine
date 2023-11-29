@@ -101,12 +101,11 @@ export type PatientType = {
 
 export function isPatientType(data: PatientType | any): data is PatientType {
     return (
-        typeof (data as PatientType).name === 'string' &&
-        typeof (data as PatientType).birthdate === typeof Date &&
-        typeof (data as PatientType).email === 'string' &&
-        typeof (data as PatientType).country === 'string' &&
-        typeof (data as PatientType).state === 'string' &&
-        typeof (data as PatientType).city === 'string' &&
-        typeof (data as PatientType).street === 'string'
+        typeof data.name === 'string' &&
+        typeof data.email === 'string' &&
+        typeof data.country === 'string' &&
+        typeof data.state === 'string' &&
+        typeof data.city === 'string' &&
+        typeof data.street === 'string'
     )
 }

@@ -4,11 +4,11 @@ import * as patientController from './../controllers/PatientController'
 
 const router = express.Router()
 
-router.route('/')
+router.route('/patients')
     .post(patientController.persistPatient)
     .get(patientController.getAllPatients)
 
-router.route('/:id')
+router.route('/patients/:id')
     .put(patientController.updatePatient)
     .delete(patientController.deletePatient)
     .get(patientController.getPatientById)

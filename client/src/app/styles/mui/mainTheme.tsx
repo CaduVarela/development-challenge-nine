@@ -74,7 +74,7 @@ const mainTheme = createTheme({
                         backgroundColor: palette.lightestGray,
                     },
                     "&.Mui-error": {
-                        borderColor: palette.themeColorContrast,
+                        borderColor: palette.warning,
                         backgroundColor: palette.themeColorContrastLight,
                     },
                     "&.MuiPickersPopper-root": {

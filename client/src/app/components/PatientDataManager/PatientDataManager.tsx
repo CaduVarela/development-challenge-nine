@@ -21,26 +21,38 @@ import 'dayjs/locale/pt-br'
 
 import { Icon } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { PatientType, isPatientType } from '@/shared/PatientType'
+import CustomError from '@/shared/CustomError'
 
 //import CountrySelect from '../CountrySelect/CountrySelect'
 
-const PatientDataManager = ({variant='manager'} : {variant?: string}) => {
+const PatientDataManager = ({
+    variant='manager',
+    targetId,
+    setDataManagerState
+} : {
+    variant?: string,
+    targetId?: number,
+    setDataManagerState: (val: 'new' | 'manager'| '' | null) => void
+}) => {
 
     const suportedLocaleLanguages = ['EN', 'BR'];
-    const [userIPCountryCode, setUserIPCountryCode] = useState('EN');
+    const [userIPCountryCode, setUserIPCountryCode] = useState('en');
     const [formCurrentStep, setFormCurrentStep] = useState(0);
 
     const formSteps = [
         {
             id: 'personal',
-            title: 'Patient user personal info'
+            title: 'Patient user personal info',
+            hasError: false
         },
         {
             id: 'address',
-            title: 'Patient address info'
+            title: 'Patient address info',
+            hasError: false
         },
     ]
-
 
     interface Form {
         name: FormItem<string>,
@@ -51,6 +63,7 @@ const PatientDataManager = ({variant='manager'} : {variant?: string}) => {
         country: FormItem<string>,
         state: FormItem<string>,
         streetAddress: FormItem<string>,
+        addressNumber: FormItem<string>
     }
 
     interface FormItem<fieldValueType> {
@@ -69,36 +82,105 @@ const PatientDataManager = ({variant='manager'} : {variant?: string}) => {
         country: { value: '', error: false, helperText: '', isRequired: true},
         state: { value: '', error: false, helperText: '', isRequired: true},
         streetAddress: { value: '', error: false, helperText: '', isRequired: true},
+        addressNumber: { value: '', error: false, helperText: '', isRequired: false},
+    }
+    
+    // Backend communication
+    const queryClient = useQueryClient()
+    
+    // If targetId exists, gets patient based on this id
+    let patientQuery
+    if (targetId) {
+        patientQuery = useQuery({
+            queryKey: ['patients', targetId],
+            queryFn: () => {
+                return fetch(`http://localhost:22194/patients/${targetId}`)
+                    .then((res) => res.json())
+                    .then((resJson : PatientType | CustomError) => {
+                    if ('rawError' in resJson)
+                        throw resJson
+                    return resJson
+                })
+            },
+        })
     }
 
-    const [form, setForm] = useState<Form>(defaultForm);
-    
+    const patientSearchMutation = useMutation({
+        mutationFn: (newPatient : PatientType) => {
+            return fetch(`http://localhost:22194/patients/${targetId}`, {
+                method: 'PUT',
+                body: JSON.stringify(newPatient),
+                headers: {'Content-type': 'application/json'}
+            })
+            .then((res) => res.json())
+            .then((resJson: PatientType | CustomError) => {
+                if('rawError' in resJson)
+                    throw resJson
+                console.log(resJson)
+                return resJson
+            })
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries()
+            setDataManagerState(null)
+        }
+    })
+
+    const patientCreateMutation = useMutation({
+        mutationFn: (newPatient : PatientType) => {
+            return fetch('http://localhost:22194/patients', {
+                method: 'POST',
+                body: JSON.stringify(newPatient),
+                headers: {'Content-type': 'application/json'}
+            })
+            .then((res) => res.json())
+            .then((resJson : PatientType | CustomError) => {
+                if ('rawError' in resJson)
+                    throw resJson
+                return resJson
+            })
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries()
+            setDataManagerState(null)
+        }
+    })
+
+    // Defines current patient to defaultForm values or sync it to database if a targetId is defined
+    const [currentPatient, setCurrentPatient] = useState(defaultForm)
+    if (patientQuery !== undefined && patientQuery.data !== undefined) { 
+        currentPatient.name.value = patientQuery.data.name as string
+        currentPatient.email.value = patientQuery.data.email as string
+        currentPatient.birthdate.value = dayjs(patientQuery.data.birthdate)
+        currentPatient.postalCode.value = patientQuery.data.postalCode as string
+        currentPatient.city.value = patientQuery.data.city as string
+        currentPatient.country.value = patientQuery.data.country as string
+        currentPatient.state.value = patientQuery.data.state as string
+        currentPatient.streetAddress.value = patientQuery.data.street as string
+        if (typeof patientQuery.data.addressNumber === 'number')
+            currentPatient.addressNumber.value = patientQuery.data.addressNumber.toString()
+    }
+
+    const [form, setForm] = useState<Form>(currentPatient);
+
     // 
-    async function getUserIPCountryCodeCountryCode() {
+    async function getUserIPCountryCode() {
         let response = await fetch('http://ip-api.com/json/?fields=61439')
             .then(res => res.json());
-        let countryCode = '';
+        let countryCode : string = '';
         switch (response.countryCode) {
             case 'BR':
                 countryCode = 'pt-br'
                 break;
             default:
                 if (suportedLocaleLanguages.includes(response.countryCode))
-                    countryCode = response.countryCode;
+                    countryCode = response.countryCode.toLowerCase();
                 break;
         }
         setUserIPCountryCode(countryCode);
     }
-
-    async function getZipCode() {
-        let response = await fetch('')
-            .then(res => res.json());
-        console.log(response)
-    }
-
     useEffect(() => {
-        getUserIPCountryCodeCountryCode();
-        //getZipCode();
+        getUserIPCountryCode();
     })
 
     // Form data manipulation
@@ -113,7 +195,7 @@ const PatientDataManager = ({variant='manager'} : {variant?: string}) => {
         return variableNamesInForm
     }
 
-    function getCurrentFormPageFieldsName() {
+    function getCurrentFormPageFieldsNames() {
         let variableNamesInForm : string[] = getAllFormFieldsName();
         let currentPageFields : string[] = [];
 
@@ -133,50 +215,75 @@ const PatientDataManager = ({variant='manager'} : {variant?: string}) => {
         console.log('validating: ')
         console.log(form)
 
-        let isWrong : boolean = false;
-        let currentPageFieldsName : string[] = getCurrentFormPageFieldsName();
+        let isValid : boolean = true;
 
-        // Checks all current form step fields are filled
-        currentPageFieldsName.map((variableName : string) => {
+        if (variant === 'new') {
+            const currentPageFieldsNames : string[] = getCurrentFormPageFieldsNames();
+            currentPageFieldsNames.map((fieldName : string) => { validateSingleField(fieldName); if(validateSingleField(fieldName) === false) isValid = false })
+        }
+        else if (variant === 'manager') {
+            const allFormFieldsNames : string[] = getAllFormFieldsName();
+            allFormFieldsNames.map((fieldName : string) => { validateSingleField(fieldName); if(validateSingleField(fieldName) === false) isValid = false })
+        }
 
-            // Checks if its not on default value and if it is required
-            if ( form[variableName as keyof Form].value === defaultForm[variableName as keyof Form].value && defaultForm[variableName as keyof Form].isRequired) {
-                // In case it does, add error and a helper text to the element
+        return isValid
+    }
+
+    function validateSingleField(fieldName : string) {
+        let isValid : boolean = true
+
+        // Checks if its on default value and if it is required
+        if ( form[fieldName as keyof Form].value === defaultForm[fieldName as keyof Form].value && defaultForm[fieldName as keyof Form].isRequired) {
+            // In case it does, adds error and a helper text to the element
+            setForm((prevState: Form) => ({
+                ...prevState,
+                [fieldName]: { value: prevState[fieldName as keyof Form].value, error: true, helperText: 'Field should not be empty', isRequired: prevState[fieldName as keyof Form].isRequired }
+            }));
+            isValid = false;
+        }
+
+        // Checks if date is valid in case the field is a dayjs variable type
+        if (typeof form[fieldName as keyof Form].value === typeof dayjs()) {
+            let isValidDate = dayjs(form[fieldName as keyof Form].value).isValid();
+            if (!isValidDate) { 
                 setForm((prevState: Form) => ({
                     ...prevState,
-                    [variableName]: { value: prevState[variableName as keyof Form].value, error: true, helperText: 'Field should not be empty', isRequired: prevState[variableName as keyof Form].isRequired }
+                    [fieldName]: { value: prevState[fieldName as keyof Form].value, error: true, helperText: 'Invalid date', isRequired: prevState[fieldName as keyof Form].isRequired}
                 }));
-                isWrong = true;
+                isValid = false;
             }
+        }
 
-            // Checks if date is valid in case the field is a dayjs variable type
-            if (typeof form[variableName as keyof Form].value === typeof dayjs()) {
-                let isValidDate = dayjs(form[variableName as keyof Form].value).isValid();
-                if (!isValidDate) { 
-                    setForm((prevState: Form) => ({
-                        ...prevState,
-                        [variableName]: { value: prevState[variableName as keyof Form].value, error: true, helperText: 'Invalid date', isRequired: prevState[variableName as keyof Form].isRequired}
-                    }));
-                    isWrong = true;
-                }
+        // Validates email
+        if (fieldName === 'email') {
+            let email = form.email.value;
+            let isEmailValid = email.match(/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/)
+
+            if (!isEmailValid) {
+                setForm((prevState: Form) => ({
+                    ...prevState,
+                    [fieldName]: { value: email, error: true, helperText: 'Invalid email', isRequired: prevState[fieldName as keyof Form].isRequired}
+                }));
+                isValid = false;
             }
+        }
 
-            // Validates email
-            if (variableName === 'email') {
-                let email = form.email.value;
-                let isValid = email.match(/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/)
+        return isValid
+    }
 
-                if (!isValid) {
-                    setForm((prevState: Form) => ({
-                        ...prevState,
-                        [variableName]: { value: email, error: true, helperText: 'Invalid email', isRequired: prevState[variableName as keyof Form].isRequired}
-                    }));
-                    isWrong = true;
-                }
-            }
+    function formToPatientType(form : Form) : PatientType {
+        return({
+            id: targetId,
+            name: form.name.value,
+            birthdate: (form.birthdate.value as Dayjs).toDate(),
+            email: form.email.value,
+            postalCode: form.postalCode.value,
+            country: form.country.value,
+            state: form.state.value,
+            city: form.city.value,
+            street: form.streetAddress.value,
+            addressNumber: parseInt(form.addressNumber.value),
         })
-
-        return !isWrong
     }
 
     // handle events
@@ -199,8 +306,13 @@ const PatientDataManager = ({variant='manager'} : {variant?: string}) => {
     function handleFormNextStep() {
         if (!validateFields()) return;
 
-        if (formCurrentStep < formSteps.length-1)
+        if (formCurrentStep < formSteps.length-1) {
             setFormCurrentStep((prevState) => prevState + 1)
+        }
+        else {
+            const newPatient : PatientType = formToPatientType(form)
+            patientCreateMutation.mutate(newPatient)
+        }
     }
 
     function handleFormPreviousStep() {
@@ -208,26 +320,32 @@ const PatientDataManager = ({variant='manager'} : {variant?: string}) => {
     }
 
     function handleClear() {
-        let currentPageFieldsName = getCurrentFormPageFieldsName()
+        let currentPageFieldsNames = getCurrentFormPageFieldsNames()
 
         // Only clears current form page values
-        currentPageFieldsName.map((name) => {
+        currentPageFieldsNames.map((fieldName) => {
             setForm((prevState: Form) => ({
                 ...prevState,
-                [name]: defaultForm[name as keyof Form]
+                [fieldName]: defaultForm[fieldName as keyof Form]
             }));
         })
         
     }
 
     function handleDataUpdate() {
+        if (!validateFields()) return;
+        
+        console.log('passou')
 
+        const newPatientDataJSON = formToPatientType(form);
+
+        patientSearchMutation.mutate(newPatientDataJSON);
     }
 
-
-    return(
+    return(<>
+        <div className={styles['blur-background']} onClick={() => setDataManagerState(null)}></div>
         <div className={styles['panel-wrapper']}>
-            <header>
+            <header >
                 <div className={styles['title']}>
                     {variant === 'new' &&
                         <h1>New Patient Register</h1>
@@ -238,7 +356,7 @@ const PatientDataManager = ({variant='manager'} : {variant?: string}) => {
                     </>}
                 </div>
                 <div className={styles['close']}>
-                    <button>
+                    <button onClick={() => setDataManagerState(null)}>
                         <Icon component={CloseIcon} fontSize='large'></Icon>
                     </button>
                 </div>
@@ -249,19 +367,19 @@ const PatientDataManager = ({variant='manager'} : {variant?: string}) => {
 
                 <div className={`${styles['form-group']} ${styles['name']}`}>
                     <label htmlFor='form-name'>Name *</label>
-                    <TextField error={form.name.error} helperText={form.name.helperText} name='name' id='form-name' placeholder='Teste' onChange={handleInputChange} value={form.name.value}></TextField>
+                    <TextField error={form.name.error} helperText={form.name.helperText} name='name' id='form-name' placeholder='Patient&apos;s name here' onChange={handleInputChange} value={form.name.value}></TextField>
                 </div>
 
                 <div className={`${styles['form-group']} ${styles['birthdate']}`}>
                     <label htmlFor='form-birthdate'>Birthdate *</label>
                     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={userIPCountryCode}>
-                        <DatePicker slotProps={{ textField: { variant: "standard", InputProps: { disableUnderline: true }, name: 'birthdate',  error: form.birthdate.error, helperText: form.birthdate.helperText } }} onChange={(newValue) => handleDateInputChange(newValue)} sx={{width: "100%" }} value={form.birthdate.value} />
+                        <DatePicker slotProps={{ textField: { variant: "standard", InputProps: { disableUnderline: true }, name: 'birthdate', id: 'form-birthdate',  error: form.birthdate.error, helperText: form.birthdate.helperText } }} onChange={(newValue) => handleDateInputChange(newValue)} sx={{width: "100%" }} value={form.birthdate.value} />
                     </LocalizationProvider>
                 </div>
 
                 <div className={`${styles['form-group']} ${styles['email']}`}>
                     <label htmlFor='form-email'>Email *</label>
-                    <TextField error={form.email.error} helperText={form.email.helperText} name='email' type='email' id='form-email' placeholder='Teste' onChange={handleInputChange} value={form.email.value}></TextField>
+                    <TextField error={form.email.error} helperText={form.email.helperText} name='email' type='email' id='form-email' placeholder='Patient&apos;s email here' onChange={handleInputChange} value={form.email.value}></TextField>
                 </div>
                 
             </div>
@@ -269,36 +387,35 @@ const PatientDataManager = ({variant='manager'} : {variant?: string}) => {
 
             {formSteps[formCurrentStep].id === 'address' &&
             <div className={`${styles['form']} ${styles[formSteps[formCurrentStep].id]}`}>
+
+                <div className={`${styles['form-group']} ${styles['country']}`}>
+                    <label htmlFor='form-country'>Country *</label>
+                    <TextField error={form.country.error} helperText={form.country.helperText} name='country' id='form-country' placeholder='Patient&apos;s country here' onChange={handleInputChange} value={form.country.value}></TextField>
+                </div>
+
                 <div className={`${styles['form-group']} ${styles['postal-code']}`}>
                     <label htmlFor='form-postal-code'>Postal Code</label>
-                    <TextField error={form.postalCode.error} helperText={form.postalCode.helperText} name='postalCode' id='form-postal-code' placeholder='Teste' onChange={handleInputChange} value={form.postalCode.value}></TextField>
+                    <TextField inputProps={{maxLength: 9}} error={form.postalCode.error} helperText={form.postalCode.helperText} name='postalCode' id='form-postal-code' placeholder='Patient&apos;s postal code here' onChange={handleInputChange} value={form.postalCode.value}></TextField>
                 </div>
 
                 <div className={`${styles['form-group']} ${styles['city']}`}>
                     <label htmlFor='form-city'>City *</label>
-                    <TextField error={form.city.error} helperText={form.city.helperText} name='city' id='form-city' placeholder='Teste' onChange={handleInputChange} value={form.city.value}></TextField>
+                    <TextField error={form.city.error} helperText={form.city.helperText} name='city' id='form-city' placeholder='Patient&apos;s city here' onChange={handleInputChange} value={form.city.value}></TextField>
                 </div>
-
-                <div className={`${styles['form-group']} ${styles['country']}`}>
-                    <label htmlFor='form-country'>Country *</label>
-                    <TextField error={form.country.error} helperText={form.country.helperText} name='country' id='form-country' placeholder='Teste' onChange={handleInputChange} value={form.country.value}></TextField>
-                </div>
-
-                {/*
-                <div className={`${styles['form-group']} ${styles['country']}`}>
-                    <label htmlFor='form-country'>Country *</label>
-                    <CountrySelect name='country'/>
-                </div>
-                */}
 
                 <div className={`${styles['form-group']} ${styles['state']}`}>
                     <label htmlFor='form-state'>State *</label>
-                    <TextField error={form.state.error} helperText={form.state.helperText} name='state' id='form-state' placeholder='Teste' onChange={handleInputChange} value={form.state.value}></TextField>
+                    <TextField error={form.state.error} helperText={form.state.helperText} name='state' id='form-state' placeholder='Patient&apos;s (address) state here' onChange={handleInputChange} value={form.state.value}></TextField>
                 </div>
 
                 <div className={`${styles['form-group']} ${styles['street-address']}`}>
                     <label htmlFor='form-street-address'>Street Address *</label>
-                    <TextField error={form.streetAddress.error} helperText={form.streetAddress.helperText} name='streetAddress' id='form-street-address' placeholder='Teste' onChange={handleInputChange} value={form.streetAddress.value}></TextField>
+                    <TextField error={form.streetAddress.error} helperText={form.streetAddress.helperText} name='streetAddress' id='form-street-address' placeholder='Patient&apos;s street address here' onChange={handleInputChange} value={form.streetAddress.value}></TextField>
+                </div>
+                
+                <div className={`${styles['form-group']} ${styles['address-number']}`}>
+                    <label htmlFor='form-address-number'>Address Number</label>
+                    <TextField type='number' error={form.addressNumber.error} helperText={form.addressNumber.helperText} name='addressNumber' id='form-address-number' placeholder='Patient&apos;s address number here' onChange={handleInputChange} value={form.addressNumber.value}></TextField>
                 </div>
             </div>
             }
@@ -316,7 +433,7 @@ const PatientDataManager = ({variant='manager'} : {variant?: string}) => {
                 </>}
             </div>
         </div>
-    )
+    </>)
 }
 
 export default PatientDataManager

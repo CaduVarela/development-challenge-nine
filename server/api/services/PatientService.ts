@@ -7,7 +7,7 @@ export async function getAllPatients(whereNameLike?: string) {
 
     let nameFilterArgument = '%';
 
-    if (whereNameLike) {
+    if (whereNameLike && whereNameLike !== '') {
         nameFilterArgument = `%${whereNameLike}%`
     }
 
@@ -39,14 +39,14 @@ export function getPatientById(id : number) {
     return Patient.findByPk(id).catch(utils.generateErrorJSON)
 }
 
-export function updatePatient(changeOnId : number, newPatientValueJSON : PatientType) {
+export async function updatePatient(targetId : number, newPatientValueJSON : PatientType) {
+
     return Patient.update(newPatientValueJSON, {
         where: {
-            id: {
-                id: changeOnId
-            }
+            id: targetId
         }
     }).catch(utils.generateErrorJSON)
+    
 }
 
 export function deletePatient(deleteOnId : number) {

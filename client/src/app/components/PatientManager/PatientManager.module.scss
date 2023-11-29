@@ -35,7 +35,7 @@ $panel-min-height: 460px;
 
     padding: 32px;
 
-    header {
+    >header {
         grid-area: header;
         color: $theme-color;
         text-align: center;
