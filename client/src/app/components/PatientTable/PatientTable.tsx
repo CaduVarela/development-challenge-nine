@@ -86,10 +86,11 @@ const columns: ColumnData[] = [
     width: 50,
     label: '#',
     dataKey: 'id',
-    wordBreak: true
+    wordBreak: true,
+    numeric: true
   },
   {
-    width: 130,
+    width: 140,
     label: 'Name',
     dataKey: 'name',
     wordBreak: true
@@ -100,7 +101,7 @@ const columns: ColumnData[] = [
     dataKey: 'birthdateString',
   },
   {
-    width: 130,
+    width: 120,
     label: 'Email',
     dataKey: 'email',
     wordBreak: true,
@@ -110,33 +111,38 @@ const columns: ColumnData[] = [
     label: 'Postal Code',
     dataKey: 'postalCode',
   },
+  /*
   {
     width: 80,
     label: 'Country',
     dataKey: 'country',
   },
+  */
   {
-    width: 60,
+    width: 80,
     label: 'State',
     dataKey: 'state',
     wordBreak: true,
   },
   {
-    width: 100,
+    width: 80,
     label: 'City',
     dataKey: 'city',
   },
   {
-    width: 100,
+    width: 80,
     label: 'Street',
     dataKey: 'street',
     wordBreak: true,
   },
+  /*
   {
     width: 100,
     label: 'Addr. Number',
     dataKey: 'addressNumber'
+    numeric: true
   },
+  */
   {
     width: 140,
     label: 'Options',
