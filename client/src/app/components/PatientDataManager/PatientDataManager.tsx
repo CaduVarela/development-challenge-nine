@@ -116,7 +116,6 @@ const PatientDataManager = ({
             .then((resJson: PatientType | CustomError) => {
                 if('rawError' in resJson)
                     throw resJson
-                console.log(resJson)
                 return resJson
             })
         },
@@ -212,8 +211,8 @@ const PatientDataManager = ({
     function validateFields() {
 
         // prints current form state
-        console.log('validating: ')
-        console.log(form)
+         console.log('validating: ')
+         console.log(form)
 
         let isValid : boolean = true;
 
@@ -244,8 +243,9 @@ const PatientDataManager = ({
 
         // Checks if date is valid in case the field is a dayjs variable type
         if (typeof form[fieldName as keyof Form].value === typeof dayjs()) {
-            let isValidDate = dayjs(form[fieldName as keyof Form].value).isValid();
-            if (!isValidDate) { 
+            let date = dayjs(form[fieldName as keyof Form].value)
+            let isValidDate = date.isValid();
+            if (!isValidDate || date.year() > dayjs().year() || date.year() < dayjs().year() - 200) { 
                 setForm((prevState: Form) => ({
                     ...prevState,
                     [fieldName]: { value: prevState[fieldName as keyof Form].value, error: true, helperText: 'Invalid date', isRequired: prevState[fieldName as keyof Form].isRequired}
@@ -266,6 +266,18 @@ const PatientDataManager = ({
                 }));
                 isValid = false;
             }
+        }
+
+        if (fieldName === 'addressNumber') {
+            // Checks if it is a valid number
+            if (isNaN(parseInt(form[fieldName as keyof Form].value as string)) && form[fieldName as keyof Form].value !== '') {
+                setForm((prevState: Form) => ({
+                    ...prevState,
+                    [fieldName]: { value: prevState[fieldName as keyof Form].value as string, error: true, helperText: 'Invalid address number', isRequired: prevState[fieldName as keyof Form].isRequired}
+                }));
+                isValid = false;
+                console.log('bruh')
+            } 
         }
 
         return isValid
@@ -336,6 +348,8 @@ const PatientDataManager = ({
         if (!validateFields()) return;
         
         console.log('passou')
+
+        console.log(form.birthdate.value?.isValid())
 
         const newPatientDataJSON = formToPatientType(form);
 
@@ -415,7 +429,7 @@ const PatientDataManager = ({
                 
                 <div className={`${styles['form-group']} ${styles['address-number']}`}>
                     <label htmlFor='form-address-number'>Address Number</label>
-                    <TextField type='number' error={form.addressNumber.error} helperText={form.addressNumber.helperText} name='addressNumber' id='form-address-number' placeholder='Patient&apos;s address number here' onChange={handleInputChange} value={form.addressNumber.value}></TextField>
+                    <TextField error={form.addressNumber.error} helperText={form.addressNumber.helperText} name='addressNumber' id='form-address-number' placeholder='Patient&apos;s address number here' onChange={handleInputChange} value={form.addressNumber.value}></TextField>
                 </div>
             </div>
             }

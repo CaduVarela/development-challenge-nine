@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  client:
+    container_name: client
+    build: 
+      context: ./client
+      dockerfile: dockerfile
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/client
+    depends_on:
+      - server
+
+  server:
+    container_name: server
+    build: 
+      context: ./server
+      dockerfile: dockerfile
+    restart: on-failure:3
+    environment:
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_HOST=db
+      - DB_NAME=PatientManagment
+    ports:
+      - 22194:22194
+    volumes:
+      - .:/server
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: mysql:8.0.34
+    container_name: database
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: challenge_nine_database
+    ports:
+      - 3307:3306
+    expose:
+      - 3306
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+    volumes:
+      - database:/var/lib/mysql
+
+volumes:
+  database:
