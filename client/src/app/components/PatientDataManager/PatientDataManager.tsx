@@ -231,29 +231,6 @@ const PatientDataManager = ({
         return currentPageFields
     }
 
-    useEffect(() => {
-
-        setFormStepsError((prevstate) => [
-            prevstate[0] = false,
-            prevstate[1] = false
-        ]);
-
-        if (form.name.error || form.birthdate.error || form.email.error) {
-            setFormStepsError((prevstate) => [
-                ...prevstate,
-                prevstate[0] = true
-            ]);
-        } 
-
-        if (form.country.error || form.postalCode.error || form.state.error || form.city.error || form.addressNumber.error || form.streetAddress.error) {
-            setFormStepsError((prevstate) => [
-                ...prevstate,
-                prevstate[1] = true
-            ]);
-        }
-
-    }, [form])
-
     function validateFields() {
 
         // prints current form state
@@ -401,6 +378,31 @@ const PatientDataManager = ({
 
         patientSearchMutation.mutate(newPatientDataJSON);
     }
+
+    // Misc
+    // Everytime form changes, check the error state and update form step errors
+    useEffect(() => {
+
+        setFormStepsError((prevstate) => [
+            prevstate[0] = false,
+            prevstate[1] = false
+        ]);
+
+        if (form.name.error || form.birthdate.error || form.email.error) {
+            setFormStepsError((prevstate) => [
+                ...prevstate,
+                prevstate[0] = true
+            ]);
+        } 
+
+        if (form.country.error || form.postalCode.error || form.state.error || form.city.error || form.addressNumber.error || form.streetAddress.error) {
+            setFormStepsError((prevstate) => [
+                ...prevstate,
+                prevstate[1] = true
+            ]);
+        }
+
+    }, [form])
 
     return(<>
         <div className={styles['blur-background']} onClick={() => setDataManagerState(null)}></div>
