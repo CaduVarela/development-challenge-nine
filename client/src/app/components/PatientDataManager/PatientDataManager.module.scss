@@ -18,8 +18,7 @@ $panel-min-height: 68vh;
 .panel-wrapper {
   position: absolute;
 
-  // Align Center
-  top: 7vh;
+  top: 5vh;
   left: 0;
   right: 0;
   margin: 0 auto;
@@ -41,7 +40,7 @@ $panel-min-height: 68vh;
 
   header {
 
-    height: 6.75vh;
+    height: 32px;
     min-height: 48px;
 
     padding: 0;
@@ -65,9 +64,11 @@ $panel-min-height: 68vh;
     .title {
       grid-area: title;
 
-      overflow-x: scroll;
+      overflow-x: auto;
       overflow-y: hidden;
       white-space: nowrap;
+
+      padding-bottom: 16px;
 
       > div {
         margin: 0;

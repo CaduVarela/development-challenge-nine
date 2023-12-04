@@ -3,6 +3,7 @@ import react from 'react'
 
 // Style
 import styles from './PatientDataManager.module.scss'
+import palette from './../../styles/utils.module.scss'
 
 // Hooks
 import { useState, useEffect } from 'react'
@@ -19,7 +20,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs'
 import 'dayjs/locale/pt-br'
 
-import { Icon } from '@mui/material'
+import { Icon, styled } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PatientType, isPatientType } from '@/shared/PatientType'
@@ -45,14 +46,13 @@ const PatientDataManager = ({
         {
             id: 'personal',
             title: 'Patient user personal info',
-            hasError: false
         },
         {
             id: 'address',
             title: 'Patient address info',
-            hasError: false
         },
     ]
+    const [formStepsError, setFormStepsError] = useState([false, false])
 
     interface Form {
         name: FormItem<string>,
@@ -85,6 +85,29 @@ const PatientDataManager = ({
         addressNumber: { value: '', error: false, helperText: '', isRequired: false},
     }
     
+    // Styled 
+    const NavButton = styled(Button)({
+        fontSize: '1.15em', 
+        margin: 0, 
+        padding: '2px', 
+        color: palette.gray,
+        borderBottom: `2px solid ${palette.gray}`, 
+        borderRadius: '8px 8px 0 0',
+        '&.error': {
+            color: palette.warning,
+            borderColor: palette.warning,
+        },
+        '&.current': {
+            color: palette.themeColor,
+            borderColor: palette.themeColor,
+        },
+        '&.current&.error': {
+            color: palette.warning,
+            borderColor: palette.warning,
+            backgroundColor: palette.themeColorContrastLight,
+        }
+    })
+
     // Backend communication
     const queryClient = useQueryClient()
     
@@ -208,11 +231,34 @@ const PatientDataManager = ({
         return currentPageFields
     }
 
+    useEffect(() => {
+
+        setFormStepsError((prevstate) => [
+            prevstate[0] = false,
+            prevstate[1] = false
+        ]);
+
+        if (form.name.error || form.birthdate.error || form.email.error) {
+            setFormStepsError((prevstate) => [
+                ...prevstate,
+                prevstate[0] = true
+            ]);
+        } 
+
+        if (form.country.error || form.postalCode.error || form.state.error || form.city.error || form.addressNumber.error || form.streetAddress.error) {
+            setFormStepsError((prevstate) => [
+                ...prevstate,
+                prevstate[1] = true
+            ]);
+        }
+
+    }, [form])
+
     function validateFields() {
 
         // prints current form state
-         console.log('validating: ')
-         console.log(form)
+        // console.log('validating: ')
+        // console.log(form)
 
         let isValid : boolean = true;
 
@@ -365,8 +411,20 @@ const PatientDataManager = ({
                         <h1>New Patient Register</h1>
                     }
                     {variant === 'manager' && <>
-                        <Button variant='text' onClick={() => setFormCurrentStep(0)} sx={{fontSize: '1.15em', margin: 0}}>Personal</Button>
-                        <Button variant='text' onClick={() => setFormCurrentStep(1)} sx={{fontSize: '1.15em', margin: 0}}>Address</Button>
+                        <NavButton 
+                            variant='text' 
+                            onClick={() => setFormCurrentStep(0)} 
+                            className={`${formCurrentStep === 0 && 'current'} ${formStepsError[0] && 'error'}`}
+                        >
+                            Personal
+                        </NavButton>
+                        <NavButton 
+                            variant='text' 
+                            onClick={() => setFormCurrentStep(1)} 
+                            className={`${formCurrentStep === 1 && 'current'} ${formStepsError[1] && 'error'}`}
+                        >
+                            Address
+                        </NavButton>
                     </>}
                 </div>
                 <div className={styles['close']}>
