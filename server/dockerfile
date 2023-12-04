@@ -1,0 +1,14 @@
+FROM node:19.8.1
+
+RUN mkdir /usr/client
+WORKDIR /usr/client
+
+COPY package.json yarn.lock ./
+
+RUN yarn install
+
+COPY . .
+
+EXPOSE 22194
+
+CMD ["yarn", "build-dev"]
